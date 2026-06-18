@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PingIt</AssemblyName>
+    <RootNamespace>PingIt</RootNamespace>
+    <Version>1.0.0</Version>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+  </PropertyGroup>
+
+</Project>
