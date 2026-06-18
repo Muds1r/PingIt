@@ -155,6 +155,7 @@ internal sealed class OverlayForm : Form
         Location = new Point(_settings.X, _settings.Y);
         TopMost = true;
         Text = AppConstants.AppName;
+        Icon = AppIcons.Tray;
         BackColor = AppConstants.BackgroundColor;
         DoubleBuffered = true;
     }

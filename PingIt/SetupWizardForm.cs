@@ -9,6 +9,7 @@ internal sealed class SetupWizardForm : Form
     public SetupWizardForm()
     {
         Text = "Welcome to PingIt";
+        Icon = AppIcons.Tray;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterScreen;
         MaximizeBox = false;

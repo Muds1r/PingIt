@@ -51,7 +51,7 @@ internal sealed class TrayHost : IDisposable
 
         _notifyIcon = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            Icon = AppIcons.Tray,
             Text = AppConstants.AppName,
             Visible = true,
             ContextMenuStrip = trayMenu

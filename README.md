@@ -4,6 +4,10 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 
 **Repository:** [github.com/Muds1r/PingIt](https://github.com/Muds1r/PingIt)
 
+<p align="center">
+  <img src="assets/pingit-logo.png" alt="PingIt logo" width="128">
+</p>
+
 ---
 
 ## Features
@@ -24,7 +28,7 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 
 ---
 
-## Project status (v1.1.0)
+## Project status (v1.2.0)
 
 | Area | Status |
 |------|--------|
@@ -34,7 +38,7 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 | First-run wizard | ✅ Done |
 | Settings persistence | ✅ Done |
 | Windows installer script | ✅ Done |
-| Custom app icon | ❌ Uses system default |
+| Custom app icon | ✅ Tray, taskbar, installer |
 | Ping host picker in UI | ❌ Edit JSON only |
 | GitHub Actions CI / releases | ❌ Not set up |
 | Unit tests | ❌ Not started |
@@ -46,7 +50,7 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 
 ### Install
 
-1. Download `PingIt-Setup-1.1.0.exe` from [Releases](https://github.com/Muds1r/PingIt/releases) (or build it yourself — see below).
+1. Download `PingIt-Setup-1.2.0.exe` from [Releases](https://github.com/Muds1r/PingIt/releases) (or build it yourself — see below).
 2. Run the installer and finish the wizard.
 3. On **first launch**, pick which stats to show (Download, Upload, Ping).
 4. Drag the overlay where you want it, then open the **PingIt tray icon** → turn off **Move overlay**.
@@ -155,10 +159,10 @@ On Windows, with [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) 
 ```powershell
 .\scripts\build-installer.ps1
 # or with version:
-.\scripts\build-installer.ps1 -Version 1.1.0
+.\scripts\build-installer.ps1 -Version 1.2.0
 ```
 
-Output: `dist\installer\PingIt-Setup-1.1.0.exe`
+Output: `dist\installer\PingIt-Setup-1.2.0.exe`
 
 ---
 
@@ -185,6 +189,7 @@ PingIt/
     ├── AppConstants.cs         # Intervals, colors, presets
     ├── MetricFormatter.cs      # Speed/ping text formatting
     ├── TextSize.cs             # Small / Medium / Large enum
+    ├── AppIcons.cs              # Loads app.ico for tray and window
     ├── StartupHelper.cs        # Windows Run registry (boot startup)
     └── Win32Window.cs          # Topmost + click-through Win32 APIs
 ```
@@ -250,7 +255,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Roadmap
 
-- [ ] Custom app icon
+- [x] Custom app icon
 - [ ] Ping host picker in tray menu
 - [ ] GitHub Actions — auto-build installer on release
 - [ ] Per-adapter selection

@@ -8,10 +8,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PingIt</AssemblyName>
     <RootNamespace>PingIt</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>partial</TrimMode>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="app.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
 </Project>
