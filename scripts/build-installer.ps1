@@ -25,9 +25,10 @@ if (-not (Test-Path $project)) {
 }
 
 if ([string]::IsNullOrWhiteSpace($Version)) {
-    $xml = [xml](Get-Content $project)
-    $Version = $xml.Project.PropertyGroup.Version
-    if ([string]::IsNullOrWhiteSpace($Version)) {
+    $csproj = Get-Content $project -Raw
+    if ($csproj -match '<Version>([^<]+)</Version>') {
+        $Version = $Matches[1]
+    } else {
         $Version = "1.0.0"
     }
 }
@@ -48,6 +49,7 @@ dotnet publish $project `
     -r $Runtime `
     --self-contained true `
     -p:Version=$Version `
+    -p:PublishTrimmed=false `
     -p:PublishReadyToRun=true `
     -o $publishDir
 
