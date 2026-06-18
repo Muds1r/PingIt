@@ -65,6 +65,19 @@ internal sealed class OverlayRenderer : IDisposable
 
         if (settings.ShowPing)
             DrawRow(g, width, "●", MetricFormatter.Latency(metrics.LatencyMs), y);
+
+        if (interactive)
+            DrawCloseButton(g, width);
+    }
+
+    public static Rectangle CloseButtonRect(int width) => new(width - 22, 6, 14, 14);
+
+    private void DrawCloseButton(Graphics g, int width)
+    {
+        var rect = CloseButtonRect(width);
+        using var brush = new SolidBrush(Color.FromArgb(170, 200, 200, 210));
+        using var font = new Font(AppConstants.FontFamily, 8f, FontStyle.Bold);
+        g.DrawString("×", font, brush, rect.X - 1, rect.Y - 3);
     }
 
     private void DrawRow(Graphics g, int width, string icon, string value, int y)

@@ -25,7 +25,6 @@ internal sealed class OverlayForm : Form
         ConfigureWindow();
         _menu = new OverlayMenu(_settings, OnSettingsChanged);
         _tray = new TrayHost(
-            _settings,
             _menu,
             SetInteractiveMode,
             SetOverlayVisible,
@@ -37,13 +36,18 @@ internal sealed class OverlayForm : Form
 
         ApplyAppearance();
 
+        if (!_settings.OverlayVisible)
+            HideToTray(showHint: false);
+        else
+            ApplyTaskbarVisibility(visible: true);
+
         if (isFirstRun)
         {
             _tray.BeginPositioningMode();
             MessageBox.Show(
                 "Drag the overlay to your preferred spot.\n\n" +
                 "When finished, open the PingIt icon near the clock and turn off \"Move overlay\".\n\n" +
-                "The overlay will then stay click-through so games and apps work normally.",
+                "Closing the overlay hides it to the tray — PingIt keeps running in the background, like Discord.",
                 AppConstants.AppName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -71,15 +75,15 @@ internal sealed class OverlayForm : Form
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        _sampleTimer.Start();
-        ConfigurePingTimer(start: _settings.ShowPing);
-        _topMostTimer.Start();
+        if (_settings.OverlayVisible)
+            ResumeMonitoring();
     }
 
     protected override void OnDeactivate(EventArgs e)
     {
         base.OnDeactivate(e);
-        Win32Window.EnsureTopMost(Handle);
+        if (Visible)
+            Win32Window.EnsureTopMost(Handle);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -87,13 +91,11 @@ internal sealed class OverlayForm : Form
         if (!_allowClose)
         {
             e.Cancel = true;
-            Hide();
-            _tray.SyncOverlayVisibility(false);
+            HideToTray(showHint: true);
             return;
         }
 
-        _settings.X = Location.X;
-        _settings.Y = Location.Y;
+        PersistPosition();
         _settings.Save();
 
         _sampleTimer.Stop();
@@ -115,6 +117,14 @@ internal sealed class OverlayForm : Form
     protected override void OnMouseDown(MouseEventArgs e)
     {
         base.OnMouseDown(e);
+
+        if (_interactiveMode && e.Button == MouseButtons.Left &&
+            OverlayRenderer.CloseButtonRect(ClientSize.Width).Contains(e.Location))
+        {
+            HideToTray(showHint: true);
+            return;
+        }
+
         if (!_interactiveMode || e.Button != MouseButtons.Left)
             return;
 
@@ -144,7 +154,6 @@ internal sealed class OverlayForm : Form
         StartPosition = FormStartPosition.Manual;
         Location = new Point(_settings.X, _settings.Y);
         TopMost = true;
-        ShowInTaskbar = false;
         Text = AppConstants.AppName;
         BackColor = AppConstants.BackgroundColor;
         DoubleBuffered = true;
@@ -220,11 +229,60 @@ internal sealed class OverlayForm : Form
     private void SetOverlayVisible(bool visible)
     {
         if (visible)
+        {
+            _settings.OverlayVisible = true;
             Show();
+            ApplyTaskbarVisibility(visible: true);
+            Win32Window.EnsureTopMost(Handle);
+            ResumeMonitoring();
+        }
         else
-            Hide();
+        {
+            HideToTray(showHint: false);
+        }
 
         _tray.SyncOverlayVisibility(visible);
+        _settings.Save();
+    }
+
+    private void HideToTray(bool showHint)
+    {
+        PersistPosition();
+        _settings.OverlayVisible = false;
+        Hide();
+        ApplyTaskbarVisibility(visible: false);
+        _tray.SyncOverlayVisibility(false);
+        PauseMonitoring();
+
+        if (showHint && !_settings.TrayCloseHintShown)
+        {
+            _settings.TrayCloseHintShown = true;
+            _tray.NotifyStillRunning();
+        }
+
+        _settings.Save();
+    }
+
+    private void ResumeMonitoring()
+    {
+        _sampleTimer.Start();
+        ConfigurePingTimer(start: _settings.ShowPing);
+        _topMostTimer.Start();
+    }
+
+    private void PauseMonitoring()
+    {
+        _topMostTimer.Stop();
+        _sampleTimer.Stop();
+        _pingTimer.Stop();
+    }
+
+    private void ApplyTaskbarVisibility(bool visible) => ShowInTaskbar = visible;
+
+    private void PersistPosition()
+    {
+        _settings.X = Location.X;
+        _settings.Y = Location.Y;
     }
 
     private void RequestExit()

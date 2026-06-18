@@ -8,7 +8,6 @@ internal sealed class TrayHost : IDisposable
     private bool _menuOpen;
 
     public TrayHost(
-        AppSettings settings,
         OverlayMenu menu,
         Action<bool> setInteractiveMode,
         Action<bool> setOverlayVisible,
@@ -37,7 +36,7 @@ internal sealed class TrayHost : IDisposable
         foreach (ToolStripItem item in menu.Menu.Items)
             trayMenu.Items.Add(item);
         trayMenu.Items.Add(new ToolStripSeparator());
-        trayMenu.Items.Add("Exit", null, (_, _) => exit());
+        trayMenu.Items.Add("Quit PingIt", null, (_, _) => exit());
 
         trayMenu.Opening += (_, _) =>
         {
@@ -78,6 +77,14 @@ internal sealed class TrayHost : IDisposable
 
     private void UpdateInteractiveMode() =>
         SetInteractiveMode(_menuOpen || _moveOverlayItem.Checked);
+
+    public void NotifyStillRunning()
+    {
+        _notifyIcon.BalloonTipTitle = AppConstants.AppName;
+        _notifyIcon.BalloonTipText = "PingIt is still running in the background. Click the tray icon to show the overlay again.";
+        _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
+        _notifyIcon.ShowBalloonTip(3000);
+    }
 
     public void Dispose() => _notifyIcon.Dispose();
 }

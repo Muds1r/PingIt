@@ -15,8 +15,9 @@ internal sealed class AppSettings
     public bool ShowUpload { get; set; } = true;
     public bool ShowPing { get; set; } = true;
     public bool StartWithWindows { get; set; }
-
     public bool SetupCompleted { get; set; }
+    public bool OverlayVisible { get; set; } = true;
+    public bool TrayCloseHintShown { get; set; }
 
     public bool NeedsNetworkSampling => ShowDownload || ShowUpload;
 
