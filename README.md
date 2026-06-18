@@ -50,10 +50,14 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 
 ### Install
 
-1. Download `PingIt-Setup-1.2.0.exe` from [Releases](https://github.com/Muds1r/PingIt/releases) (or build it yourself — see below).
-2. Run the installer and finish the wizard.
+1. Download **`PingIt-Setup-1.2.0.exe`** from **[Releases](https://github.com/Muds1r/PingIt/releases/latest)**.
+2. Double-click the file and follow the wizard.
 3. On **first launch**, pick which stats to show (Download, Upload, Ping).
 4. Drag the overlay where you want it, then open the **PingIt tray icon** → turn off **Move overlay**.
+
+> **No .NET install needed** — the setup bundles everything.
+
+**Do not** download `PingIt.iss` — that is the developer build script, not the installer.
 
 PingIt keeps running in the background. When the overlay is hidden, it leaves the **taskbar** and only the **system tray** icon remains (same idea as Discord).
 
