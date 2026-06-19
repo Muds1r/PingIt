@@ -10,11 +10,12 @@ internal sealed class OverlayRenderer : IDisposable
     private Pen? _borderPen;
     private SolidBrush? _iconBrush;
     private SolidBrush? _valueBrush;
+    private bool _initialized;
 
     public void ApplyTheme(TextSize textSize)
     {
         _dataFont?.Dispose();
-        _dataFont = new Font(AppConstants.FontFamily, textSize.ToFontSize(), FontStyle.Regular, GraphicsUnit.Point);
+        _dataFont = CreateDataFont(textSize.ToFontSize());
 
         _borderPen?.Dispose();
         _iconBrush?.Dispose();
@@ -23,17 +24,36 @@ internal sealed class OverlayRenderer : IDisposable
         _borderPen = new Pen(AppConstants.BorderColor);
         _iconBrush = new SolidBrush(AppConstants.IconColor);
         _valueBrush = new SolidBrush(AppConstants.ValueColor);
+        _initialized = true;
+    }
+
+    private static Font CreateDataFont(float size)
+    {
+        try
+        {
+            return new Font(AppConstants.FontFamily, size, FontStyle.Regular, GraphicsUnit.Point);
+        }
+        catch
+        {
+            return new Font(SystemFonts.MessageBoxFont?.FontFamily ?? SystemFonts.DefaultFont.FontFamily, size, FontStyle.Regular, GraphicsUnit.Point);
+        }
     }
 
     public Size MeasureClientSize(AppSettings settings)
     {
-        var rowHeight = _dataFont.Height + RowGap;
+        if (!_initialized)
+            ApplyTheme(settings.TextSize);
+
+        var rowHeight = _dataFont!.Height + RowGap;
         var height = PadY * 2 + settings.VisibleMetricCount * rowHeight - RowGap;
         return new Size(settings.TextSize.ToOverlayWidth(), height);
     }
 
     public void Draw(Graphics g, int width, int height, AppSettings settings, in MetricSnapshot metrics, bool interactive)
     {
+        if (!_initialized)
+            return;
+
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
@@ -48,7 +68,7 @@ internal sealed class OverlayRenderer : IDisposable
 
         g.DrawRectangle(_borderPen!, 0, 0, width - 1, height - 1);
 
-        var rowHeight = _dataFont.Height + RowGap;
+        var rowHeight = _dataFont!.Height + RowGap;
         var y = PadY;
 
         if (settings.ShowDownload)
@@ -90,7 +110,7 @@ internal sealed class OverlayRenderer : IDisposable
 
     public void Dispose()
     {
-        _dataFont.Dispose();
+        _dataFont?.Dispose();
         _borderPen?.Dispose();
         _iconBrush?.Dispose();
         _valueBrush?.Dispose();

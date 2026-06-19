@@ -32,7 +32,7 @@ internal sealed class OverlayForm : Form
 
         _sampleTimer = CreateTimer(AppConstants.NetworkSampleIntervalMs, OnSampleTick);
         _pingTimer = CreateTimer(AppConstants.PingIntervalMs, OnPingTick);
-        _topMostTimer = CreateTimer(AppConstants.TopMostRefreshIntervalMs, (_, _) => Win32Window.EnsureTopMost(Handle));
+        _topMostTimer = CreateTimer(AppConstants.TopMostRefreshIntervalMs, OnTopMostTick);
 
         ApplyAppearance();
 
@@ -148,6 +148,14 @@ internal sealed class OverlayForm : Form
             _dragging = false;
     }
 
+    private void OnTopMostTick(object? sender, EventArgs e)
+    {
+        if (!IsHandleCreated || IsDisposed)
+            return;
+
+        Win32Window.EnsureTopMost(Handle);
+    }
+
     private void ConfigureWindow()
     {
         FormBorderStyle = FormBorderStyle.None;
@@ -169,18 +177,34 @@ internal sealed class OverlayForm : Form
 
     private void OnSampleTick(object? sender, EventArgs e)
     {
-        var networkChanged = _session.SampleNetwork(_settings.ShowDownload, _settings.ShowUpload);
-        var latencyChanged = _settings.ShowPing && _session.ReadLatencyChanged(_lastLatencyMs);
+        try
+        {
+            var networkChanged = _session.SampleNetwork(_settings.ShowDownload, _settings.ShowUpload);
+            var latencyChanged = _settings.ShowPing && _session.ReadLatencyChanged(_lastLatencyMs);
 
-        if (!networkChanged && !latencyChanged)
-            return;
+            if (!networkChanged && !latencyChanged)
+                return;
 
-        _lastLatencyMs = _session.Snapshot.LatencyMs;
-        Invalidate();
+            _lastLatencyMs = _session.Snapshot.LatencyMs;
+            Invalidate();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Handle(ex, "Network monitoring");
+        }
     }
 
-    private void OnPingTick(object? sender, EventArgs e) =>
-        _session.RequestPing(_settings.PingHost);
+    private void OnPingTick(object? sender, EventArgs e)
+    {
+        try
+        {
+            _session.RequestPing(_settings.PingHost);
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Handle(ex, "Ping monitoring");
+        }
+    }
 
     private void OnSettingsChanged()
     {

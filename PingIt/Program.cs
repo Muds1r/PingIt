@@ -8,7 +8,20 @@ internal static class Program
     private static void Main()
     {
         ApplicationConfiguration.Initialize();
+        CrashReporter.Install();
 
+        try
+        {
+            RunApp();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Handle(ex, "Startup");
+        }
+    }
+
+    private static void RunApp()
+    {
         using var mutex = new Mutex(true, SingleInstanceMutexName, out var isNewInstance);
         if (!isNewInstance)
             return;

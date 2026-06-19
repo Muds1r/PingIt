@@ -14,8 +14,15 @@ internal static class AppIcons
             var path = Path.Combine(AppContext.BaseDirectory, "app.ico");
             if (File.Exists(path))
             {
-                _cached = new Icon(path);
-                return _cached;
+                try
+                {
+                    _cached = new Icon(path);
+                    return _cached;
+                }
+                catch
+                {
+                    // Fall back to the executable icon if app.ico is missing or invalid.
+                }
             }
 
             _cached = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;

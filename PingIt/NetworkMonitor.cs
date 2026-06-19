@@ -57,9 +57,16 @@ internal sealed class NetworkMonitor
 
         foreach (var nic in GetActiveInterfaces())
         {
-            var stats = nic.GetIPv4Statistics();
-            received += stats.BytesReceived;
-            sent += stats.BytesSent;
+            try
+            {
+                var stats = nic.GetIPv4Statistics();
+                received += stats.BytesReceived;
+                sent += stats.BytesSent;
+            }
+            catch (NetworkInformationException)
+            {
+                // Some virtual or disabled adapters throw on Windows 11.
+            }
         }
 
         return (received, sent);
