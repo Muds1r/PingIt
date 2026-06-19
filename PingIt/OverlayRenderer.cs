@@ -13,7 +13,7 @@ internal sealed class OverlayRenderer : IDisposable
 
     public void ApplyTheme(TextSize textSize)
     {
-        _dataFont.Dispose();
+        _dataFont?.Dispose();
         _dataFont = new Font(AppConstants.FontFamily, textSize.ToFontSize(), FontStyle.Regular, GraphicsUnit.Point);
 
         _borderPen?.Dispose();
