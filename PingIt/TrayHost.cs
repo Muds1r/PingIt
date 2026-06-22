@@ -9,6 +9,7 @@ internal sealed class TrayHost : IDisposable
 
     public TrayHost(
         OverlayMenu menu,
+        bool overlayVisible,
         Action<bool> setInteractiveMode,
         Action<bool> setOverlayVisible,
         Action exit)
@@ -25,7 +26,7 @@ internal sealed class TrayHost : IDisposable
 
         _showOverlayItem = new ToolStripMenuItem("Show overlay", null, (_, _) => ToggleOverlayVisibility())
         {
-            Checked = true,
+            Checked = overlayVisible,
             CheckOnClick = true
         };
 

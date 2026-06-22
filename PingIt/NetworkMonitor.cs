@@ -15,6 +15,12 @@ internal sealed class NetworkMonitor
     public double DownloadMbps { get; private set; }
     public double UploadMbps { get; private set; }
 
+    public void InvalidateAdapterCache()
+    {
+        _cachedNics = null;
+        _nicCacheExpiry = DateTime.MinValue;
+    }
+
     public bool Sample()
     {
         var now = DateTime.UtcNow;

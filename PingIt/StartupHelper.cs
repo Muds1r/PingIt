@@ -22,7 +22,7 @@ internal static class StartupHelper
         if (enabled)
         {
             var exe = Application.ExecutablePath;
-            key.SetValue(ValueName, $"\"{exe}\"");
+            key.SetValue(ValueName, $"\"{exe}\" --startup");
         }
         else
         {

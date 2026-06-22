@@ -27,5 +27,7 @@ internal sealed class MonitorSession : IDisposable
 
     public void ResetPing() => _ping.Reset();
 
+    public void InvalidateNetworkCache() => _network.InvalidateAdapterCache();
+
     public void Dispose() => _ping.Dispose();
 }

@@ -15,9 +15,10 @@ internal sealed class OverlayForm : Form
     private bool _interactiveMode;
     private bool _dragging;
     private Point _dragOffset;
-    private long _lastLatencyMs = -1;
+    private const int StartupActivationDelayMs = 2000;
 
-    public OverlayForm(AppSettings settings, bool isFirstRun)
+    private readonly System.Windows.Forms.Timer? _startupTimer;
+    private long _lastLatencyMs = -1;
     {
         _settings = settings;
         StartupHelper.SetEnabled(_settings.StartWithWindows);
@@ -26,6 +27,7 @@ internal sealed class OverlayForm : Form
         _menu = new OverlayMenu(_settings, OnSettingsChanged);
         _tray = new TrayHost(
             _menu,
+            _settings.OverlayVisible,
             SetInteractiveMode,
             SetOverlayVisible,
             RequestExit);
@@ -52,6 +54,11 @@ internal sealed class OverlayForm : Form
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
+        else if (launchedAtStartup)
+        {
+            _startupTimer = CreateTimer(StartupActivationDelayMs, OnStartupActivation);
+            _startupTimer.Start();
+        }
     }
 
     protected override CreateParams CreateParams
@@ -75,8 +82,9 @@ internal sealed class OverlayForm : Form
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        if (_settings.OverlayVisible)
-            ResumeMonitoring();
+        EnsureMonitoringRunning();
+        UpdateTopMostTimer();
+        Invalidate();
     }
 
     protected override void OnDeactivate(EventArgs e)
@@ -101,6 +109,7 @@ internal sealed class OverlayForm : Form
         _sampleTimer.Stop();
         _pingTimer.Stop();
         _topMostTimer.Stop();
+        _startupTimer?.Stop();
         _session.Dispose();
         _renderer.Dispose();
         _tray.Dispose();
@@ -146,6 +155,32 @@ internal sealed class OverlayForm : Form
         base.OnMouseUp(e);
         if (e.Button == MouseButtons.Left)
             _dragging = false;
+    }
+
+    private void OnStartupActivation(object? sender, EventArgs e)
+    {
+        _startupTimer?.Stop();
+
+        try
+        {
+            _session.InvalidateNetworkCache();
+            EnsureMonitoringRunning();
+
+            if (_settings.OverlayVisible)
+            {
+                Show();
+                ApplyTaskbarVisibility(visible: true);
+                Win32Window.EnsureTopMost(Handle);
+                SetInteractiveMode(false);
+            }
+
+            _lastLatencyMs = _session.Snapshot.LatencyMs;
+            Invalidate();
+        }
+        catch (Exception ex)
+        {
+            CrashReporter.Handle(ex, "Startup activation");
+        }
     }
 
     private void OnTopMostTick(object? sender, EventArgs e)
@@ -259,7 +294,10 @@ internal sealed class OverlayForm : Form
             Show();
             ApplyTaskbarVisibility(visible: true);
             Win32Window.EnsureTopMost(Handle);
-            ResumeMonitoring();
+            EnsureMonitoringRunning();
+            UpdateTopMostTimer();
+            SetInteractiveMode(false);
+            Invalidate();
         }
         else
         {
@@ -277,7 +315,7 @@ internal sealed class OverlayForm : Form
         Hide();
         ApplyTaskbarVisibility(visible: false);
         _tray.SyncOverlayVisibility(false);
-        PauseMonitoring();
+        UpdateTopMostTimer();
 
         if (showHint && !_settings.TrayCloseHintShown)
         {
@@ -288,18 +326,20 @@ internal sealed class OverlayForm : Form
         _settings.Save();
     }
 
-    private void ResumeMonitoring()
+    private void EnsureMonitoringRunning()
     {
-        _sampleTimer.Start();
+        if (!_sampleTimer.Enabled)
+            _sampleTimer.Start();
+
         ConfigurePingTimer(start: _settings.ShowPing);
-        _topMostTimer.Start();
     }
 
-    private void PauseMonitoring()
+    private void UpdateTopMostTimer()
     {
-        _topMostTimer.Stop();
-        _sampleTimer.Stop();
-        _pingTimer.Stop();
+        if (Visible && _settings.OverlayVisible)
+            _topMostTimer.Start();
+        else
+            _topMostTimer.Stop();
     }
 
     private void ApplyTaskbarVisibility(bool visible) => ShowInTaskbar = visible;

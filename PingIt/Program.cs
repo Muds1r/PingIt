@@ -5,14 +5,14 @@ internal static class Program
     private const string SingleInstanceMutexName = @"Global\PingIt_SingleInstance";
 
     [STAThread]
-    private static void Main()
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
         CrashReporter.Install();
 
         try
         {
-            RunApp();
+            RunApp(args);
         }
         catch (Exception ex)
         {
@@ -20,11 +20,14 @@ internal static class Program
         }
     }
 
-    private static void RunApp()
+    private static void RunApp(string[] args)
     {
         using var mutex = new Mutex(true, SingleInstanceMutexName, out var isNewInstance);
         if (!isNewInstance)
             return;
+
+        var launchedAtStartup = args.Any(static a =>
+            string.Equals(a, "--startup", StringComparison.OrdinalIgnoreCase));
 
         var settings = AppSettings.Load();
         var isFirstRun = !settings.SetupCompleted;
@@ -39,6 +42,6 @@ internal static class Program
             settings.Save();
         }
 
-        Application.Run(new OverlayForm(settings, isFirstRun));
+        Application.Run(new OverlayForm(settings, isFirstRun, launchedAtStartup));
     }
 }

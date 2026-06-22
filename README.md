@@ -69,7 +69,7 @@ PingIt keeps running in the background. When the overlay is hidden, it leaves th
 | Tray → untick **Show overlay** | Same — hidden, still running |
 | Tray → **Quit PingIt** | Fully exits the app |
 
-The first time you close to tray, a balloon tip reminds you PingIt is still running in the background.
+When **Start with Windows** is enabled, PingIt re-registers with a `--startup` flag so Windows waits for the shell to be ready before the overlay activates.
 
 ### Click-through + gaming
 
