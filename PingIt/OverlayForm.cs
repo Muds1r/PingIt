@@ -19,6 +19,8 @@ internal sealed class OverlayForm : Form
 
     private readonly System.Windows.Forms.Timer? _startupTimer;
     private long _lastLatencyMs = -1;
+
+    public OverlayForm(AppSettings settings, bool isFirstRun, bool launchedAtStartup = false)
     {
         _settings = settings;
         StartupHelper.SetEnabled(_settings.StartWithWindows);
