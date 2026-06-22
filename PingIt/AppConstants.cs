@@ -12,6 +12,14 @@ internal static class AppConstants
     public const int NicCacheRefreshSeconds = 30;
     public const int PingTimeoutMs = 2000;
 
+    public static readonly string[] PingHostPresets =
+    [
+        "1.1.1.1",
+        "8.8.8.8",
+        "9.9.9.9",
+        "google.com"
+    ];
+
     public static readonly double[] OpacityPresets = [0.35, 0.50, 0.65, 0.85, 1.00];
     public static readonly (string Label, TextSize Size)[] TextSizePresets =
     [

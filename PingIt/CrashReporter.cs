@@ -25,28 +25,31 @@ internal static class CrashReporter
         };
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
-            Handle(e.Exception, "Background task");
+            Handle(e.Exception, "Background task", showDialog: false);
             e.SetObserved();
         };
     }
 
-    public static void Handle(Exception ex, string context, bool terminating = false)
+    public static void Handle(Exception ex, string context, bool terminating = false, bool showDialog = true)
     {
         var report = BuildReport(ex, context, terminating);
-        var logPath = WriteLog(report);
+        WriteLog(report);
+
+        if (!showDialog)
+            return;
 
         if (Interlocked.Exchange(ref _shown, 1) != 0)
             return;
 
         try
         {
-            using var dialog = new ErrorReportForm(ex, context, report, logPath, terminating);
+            using var dialog = new ErrorReportForm(ex, context, report, LatestLogPath, terminating);
             dialog.ShowDialog();
         }
         catch
         {
             MessageBox.Show(
-                $"PingIt encountered an error.\n\n{ex.Message}\n\nFull details:\n{logPath}",
+                $"PingIt encountered an error.\n\n{ex.Message}\n\nFull details:\n{LatestLogPath}",
                 AppConstants.AppName,
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -85,13 +88,12 @@ internal static class CrashReporter
         }
     }
 
-    private static string WriteLog(string report)
+    private static void WriteLog(string report)
     {
         Directory.CreateDirectory(LogDirectory);
 
         var timestampedPath = Path.Combine(LogDirectory, $"error-{DateTime.Now:yyyyMMdd-HHmmss}.log");
         File.WriteAllText(timestampedPath, report);
         File.WriteAllText(LatestLogPath, report);
-        return timestampedPath;
     }
 }

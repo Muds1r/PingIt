@@ -10,6 +10,7 @@ internal sealed class OverlayMenu
     private readonly ToolStripMenuItem _startWithWindowsItem;
     private readonly ToolStripMenuItem[] _opacityItems;
     private readonly ToolStripMenuItem[] _textSizeItems;
+    private readonly ToolStripMenuItem[] _pingHostItems;
     private bool _syncing;
 
     public OverlayMenu(AppSettings settings, Action onChanged)
@@ -21,51 +22,36 @@ internal sealed class OverlayMenu
         _showUploadItem = CreateToggle("Upload", OnVisibilityChanged);
         _showPingItem = CreateToggle("Ping", OnVisibilityChanged);
         _startWithWindowsItem = CreateToggle("Start with Windows", OnStartupChanged);
+        _opacityItems = CreateOpacityItems();
+        _textSizeItems = CreateTextSizeItems();
+        _pingHostItems = CreatePingHostItems();
+    }
 
+    public void AppendTo(ToolStripItemCollection items)
+    {
         var showMenu = new ToolStripMenuItem("Show");
         showMenu.DropDownItems.AddRange([_showDownloadItem, _showUploadItem, _showPingItem]);
 
         var transparencyMenu = new ToolStripMenuItem("Transparency");
-        _opacityItems = AppConstants.OpacityPresets
-            .Select(opacity =>
-            {
-                var item = new ToolStripMenuItem($"{opacity * 100:0}%") { Tag = opacity };
-                item.Click += (_, _) =>
-                {
-                    _settings.Opacity = opacity;
-                    _onChanged();
-                };
-                return item;
-            })
-            .ToArray();
         transparencyMenu.DropDownItems.AddRange(_opacityItems);
 
         var textSizeMenu = new ToolStripMenuItem("Text size");
-        _textSizeItems = AppConstants.TextSizePresets
-            .Select(preset =>
-            {
-                var item = new ToolStripMenuItem(preset.Label) { Tag = preset.Size };
-                item.Click += (_, _) =>
-                {
-                    _settings.TextSize = preset.Size;
-                    _onChanged();
-                };
-                return item;
-            })
-            .ToArray();
         textSizeMenu.DropDownItems.AddRange(_textSizeItems);
 
-        Menu = new ContextMenuStrip();
-        Menu.Items.Add(showMenu);
-        Menu.Items.Add(transparencyMenu);
-        Menu.Items.Add(textSizeMenu);
-        Menu.Items.Add(new ToolStripSeparator());
-        Menu.Items.Add(_startWithWindowsItem);
+        var pingHostMenu = new ToolStripMenuItem("Ping host");
+        pingHostMenu.DropDownItems.AddRange(_pingHostItems);
+        pingHostMenu.DropDownItems.Add(new ToolStripSeparator());
+        pingHostMenu.DropDownItems.Add("Custom...", null, (_, _) => ChooseCustomPingHost());
+
+        items.Add(showMenu);
+        items.Add(transparencyMenu);
+        items.Add(textSizeMenu);
+        items.Add(pingHostMenu);
+        items.Add(new ToolStripSeparator());
+        items.Add(_startWithWindowsItem);
 
         Sync();
     }
-
-    public ContextMenuStrip Menu { get; }
 
     public void Sync()
     {
@@ -80,8 +66,49 @@ internal sealed class OverlayMenu
         foreach (var item in _textSizeItems)
             item.Checked = (TextSize)item.Tag! == _settings.TextSize;
 
+        foreach (var item in _pingHostItems)
+            item.Checked = string.Equals((string)item.Tag!, _settings.PingHost, StringComparison.OrdinalIgnoreCase);
+
         _syncing = false;
     }
+
+    private ToolStripMenuItem[] CreateOpacityItems() =>
+        AppConstants.OpacityPresets
+            .Select(opacity =>
+            {
+                var item = new ToolStripMenuItem($"{opacity * 100:0}%") { Tag = opacity };
+                item.Click += (_, _) =>
+                {
+                    _settings.Opacity = opacity;
+                    _onChanged();
+                };
+                return item;
+            })
+            .ToArray();
+
+    private ToolStripMenuItem[] CreateTextSizeItems() =>
+        AppConstants.TextSizePresets
+            .Select(preset =>
+            {
+                var item = new ToolStripMenuItem(preset.Label) { Tag = preset.Size };
+                item.Click += (_, _) =>
+                {
+                    _settings.TextSize = preset.Size;
+                    _onChanged();
+                };
+                return item;
+            })
+            .ToArray();
+
+    private ToolStripMenuItem[] CreatePingHostItems() =>
+        AppConstants.PingHostPresets
+            .Select(host =>
+            {
+                var item = new ToolStripMenuItem(host) { Tag = host };
+                item.Click += (_, _) => SetPingHost(host);
+                return item;
+            })
+            .ToArray();
 
     private ToolStripMenuItem CreateToggle(string text, Action onChanged)
     {
@@ -115,8 +142,34 @@ internal sealed class OverlayMenu
     private void OnStartupChanged()
     {
         _settings.StartWithWindows = _startWithWindowsItem.Checked;
-        StartupHelper.SetEnabled(_settings.StartWithWindows);
+        if (!StartupHelper.SetEnabled(_settings.StartWithWindows))
+        {
+            _settings.StartWithWindows = false;
+            Sync();
+            MessageBox.Show(
+                "Windows would not save the startup setting. Try running PingIt once as your normal user account.",
+                AppConstants.AppName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+
         _settings.Save();
+    }
+
+    private void SetPingHost(string host)
+    {
+        _settings.PingHost = host;
+        _onChanged();
+    }
+
+    private void ChooseCustomPingHost()
+    {
+        using var dialog = new PingHostDialog(_settings.PingHost);
+        if (dialog.ShowDialog() != DialogResult.OK)
+            return;
+
+        SetPingHost(dialog.Host);
     }
 
     private static void MarkClosest(ToolStripMenuItem[] items, double value, Func<ToolStripMenuItem, double> read)

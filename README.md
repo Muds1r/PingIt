@@ -50,7 +50,7 @@ A lightweight Windows network overlay that shows live **download**, **upload**, 
 
 ### Install (end users — no repo download needed)
 
-1. Download **`PingIt-Setup-1.2.0.exe`** from **[Releases](https://github.com/Muds1r/PingIt/releases/latest)** (one file only).
+1. Download **`PingIt-Setup-1.3.0.exe`** from **[Releases](https://github.com/Muds1r/PingIt/releases/latest)** (one file only).
 2. Double-click it and follow the wizard.
 3. On **first launch**, pick which stats to show (Download, Upload, Ping).
 4. Drag the overlay where you want it, then open the **PingIt tray icon** → turn off **Move overlay**.

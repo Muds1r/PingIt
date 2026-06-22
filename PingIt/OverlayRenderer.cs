@@ -7,9 +7,11 @@ internal sealed class OverlayRenderer : IDisposable
     private const int RowGap = 4;
 
     private Font _dataFont = null!;
+    private Font? _closeFont;
     private Pen? _borderPen;
     private SolidBrush? _iconBrush;
     private SolidBrush? _valueBrush;
+    private SolidBrush? _closeBrush;
     private bool _initialized;
 
     public void ApplyTheme(TextSize textSize)
@@ -94,10 +96,11 @@ internal sealed class OverlayRenderer : IDisposable
 
     private void DrawCloseButton(Graphics g, int width)
     {
+        _closeFont ??= new Font(AppConstants.FontFamily, 8f, FontStyle.Bold);
+        _closeBrush ??= new SolidBrush(Color.FromArgb(170, 200, 200, 210));
+
         var rect = CloseButtonRect(width);
-        using var brush = new SolidBrush(Color.FromArgb(170, 200, 200, 210));
-        using var font = new Font(AppConstants.FontFamily, 8f, FontStyle.Bold);
-        g.DrawString("×", font, brush, rect.X - 1, rect.Y - 3);
+        g.DrawString("×", _closeFont, _closeBrush, rect.X - 1, rect.Y - 3);
     }
 
     private void DrawRow(Graphics g, int width, string icon, string value, int y)
@@ -111,8 +114,10 @@ internal sealed class OverlayRenderer : IDisposable
     public void Dispose()
     {
         _dataFont?.Dispose();
+        _closeFont?.Dispose();
         _borderPen?.Dispose();
         _iconBrush?.Dispose();
         _valueBrush?.Dispose();
+        _closeBrush?.Dispose();
     }
 }

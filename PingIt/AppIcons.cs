@@ -29,4 +29,10 @@ internal static class AppIcons
             return _cached;
         }
     }
+
+    public static void DisposeCached()
+    {
+        _cached?.Dispose();
+        _cached = null;
+    }
 }

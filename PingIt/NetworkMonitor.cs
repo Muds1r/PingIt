@@ -19,6 +19,7 @@ internal sealed class NetworkMonitor
     {
         _cachedNics = null;
         _nicCacheExpiry = DateTime.MinValue;
+        _hasBaseline = false;
     }
 
     public bool Sample()
@@ -37,12 +38,20 @@ internal sealed class NetworkMonitor
             return true;
         }
 
+        if (received < _lastBytesReceived || sent < _lastBytesSent)
+        {
+            _lastBytesReceived = received;
+            _lastBytesSent = sent;
+            _lastSampleUtc = now;
+            return false;
+        }
+
         var elapsed = (now - _lastSampleUtc).TotalSeconds;
         if (elapsed <= 0)
             return false;
 
-        var nextDownload = Math.Max(0, received - _lastBytesReceived) * 8.0 / elapsed / 1_000_000.0;
-        var nextUpload = Math.Max(0, sent - _lastBytesSent) * 8.0 / elapsed / 1_000_000.0;
+        var nextDownload = (received - _lastBytesReceived) * 8.0 / elapsed / 1_000_000.0;
+        var nextUpload = (sent - _lastBytesSent) * 8.0 / elapsed / 1_000_000.0;
 
         var changed = MetricFormatter.ValueChanged(DownloadMbps, nextDownload)
             || MetricFormatter.ValueChanged(UploadMbps, nextUpload);
@@ -65,13 +74,24 @@ internal sealed class NetworkMonitor
         {
             try
             {
-                var stats = nic.GetIPv4Statistics();
-                received += stats.BytesReceived;
-                sent += stats.BytesSent;
+                var v4 = nic.GetIPv4Statistics();
+                received += v4.BytesReceived;
+                sent += v4.BytesSent;
             }
             catch (NetworkInformationException)
             {
-                // Some virtual or disabled adapters throw on Windows 11.
+                // Some adapters throw on Windows 11.
+            }
+
+            try
+            {
+                var v6 = nic.GetIPv6Statistics();
+                received += v6.BytesReceived;
+                sent += v6.BytesSent;
+            }
+            catch (NetworkInformationException)
+            {
+                // IPv6 may be unavailable on some adapters.
             }
         }
 

@@ -39,6 +39,7 @@ internal sealed class OverlayForm : Form
         _topMostTimer = CreateTimer(AppConstants.TopMostRefreshIntervalMs, OnTopMostTick);
 
         ApplyAppearance();
+        ApplyClampedLocation();
 
         if (!_settings.OverlayVisible)
             HideToTray(showHint: false);
@@ -115,6 +116,7 @@ internal sealed class OverlayForm : Form
         _session.Dispose();
         _renderer.Dispose();
         _tray.Dispose();
+        AppIcons.DisposeCached();
 
         base.OnFormClosing(e);
     }
@@ -155,8 +157,13 @@ internal sealed class OverlayForm : Form
     protected override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
-        if (e.Button == MouseButtons.Left)
-            _dragging = false;
+        if (e.Button != MouseButtons.Left)
+            return;
+
+        if (_dragging)
+            _tray.EndPositioningMode();
+
+        _dragging = false;
     }
 
     private void OnStartupActivation(object? sender, EventArgs e)
@@ -181,7 +188,7 @@ internal sealed class OverlayForm : Form
         }
         catch (Exception ex)
         {
-            CrashReporter.Handle(ex, "Startup activation");
+            CrashReporter.Handle(ex, "Startup activation", showDialog: false);
         }
     }
 
@@ -223,11 +230,12 @@ internal sealed class OverlayForm : Form
                 return;
 
             _lastLatencyMs = _session.Snapshot.LatencyMs;
-            Invalidate();
+            if (Visible && _settings.OverlayVisible)
+                Invalidate();
         }
         catch (Exception ex)
         {
-            CrashReporter.Handle(ex, "Network monitoring");
+            CrashReporter.Handle(ex, "Network monitoring", showDialog: false);
         }
     }
 
@@ -239,7 +247,7 @@ internal sealed class OverlayForm : Form
         }
         catch (Exception ex)
         {
-            CrashReporter.Handle(ex, "Ping monitoring");
+            CrashReporter.Handle(ex, "Ping monitoring", showDialog: false);
         }
     }
 
@@ -248,8 +256,12 @@ internal sealed class OverlayForm : Form
         Opacity = _settings.Opacity;
         ConfigurePingTimer(start: _settings.ShowPing);
         ApplyAppearance();
+        ApplyClampedLocation();
         _menu.Sync();
         _settings.Save();
+
+        if (_settings.ShowPing)
+            _session.RequestPing(_settings.PingHost);
     }
 
     private void ApplyAppearance()
@@ -257,7 +269,15 @@ internal sealed class OverlayForm : Form
         Opacity = _settings.Opacity;
         _renderer.ApplyTheme(_settings.TextSize);
         ClientSize = _renderer.MeasureClientSize(_settings);
-        Invalidate();
+        if (Visible && _settings.OverlayVisible)
+            Invalidate();
+    }
+
+    private void ApplyClampedLocation()
+    {
+        Location = ScreenPlacement.ClampToVisibleArea(new Point(_settings.X, _settings.Y), ClientSize);
+        _settings.X = Location.X;
+        _settings.Y = Location.Y;
     }
 
     private void ConfigurePingTimer(bool start)
@@ -348,8 +368,10 @@ internal sealed class OverlayForm : Form
 
     private void PersistPosition()
     {
-        _settings.X = Location.X;
-        _settings.Y = Location.Y;
+        var clamped = ScreenPlacement.ClampToVisibleArea(Location, ClientSize);
+        Location = clamped;
+        _settings.X = clamped.X;
+        _settings.Y = clamped.Y;
     }
 
     private void RequestExit()

@@ -52,7 +52,11 @@ internal sealed class AppSettings
     {
         Normalize();
         Directory.CreateDirectory(Path.GetDirectoryName(SettingsPath)!);
-        File.WriteAllText(SettingsPath, JsonSerializer.Serialize(this, JsonOptions));
+
+        var json = JsonSerializer.Serialize(this, JsonOptions);
+        var tempPath = SettingsPath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, SettingsPath, overwrite: true);
     }
 
     public void Normalize()

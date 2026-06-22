@@ -34,13 +34,7 @@ internal sealed class TrayHost : IDisposable
         trayMenu.Items.Add(_showOverlayItem);
         trayMenu.Items.Add(_moveOverlayItem);
         trayMenu.Items.Add(new ToolStripSeparator());
-        // Copy the existing items into an array first. Adding an item
-        // to a different owner can modify the original collection while
-        // it's being enumerated, causing InvalidOperationException.
-        var existingItems = new ToolStripItem[menu.Menu.Items.Count];
-        menu.Menu.Items.CopyTo(existingItems, 0);
-        foreach (ToolStripItem item in existingItems)
-            trayMenu.Items.Add(item);
+        menu.AppendTo(trayMenu.Items);
         trayMenu.Items.Add(new ToolStripSeparator());
         trayMenu.Items.Add("Quit PingIt", null, (_, _) => exit());
 
@@ -69,6 +63,8 @@ internal sealed class TrayHost : IDisposable
     private Action<bool> SetOverlayVisible { get; }
 
     public void BeginPositioningMode() => _moveOverlayItem.Checked = true;
+
+    public void EndPositioningMode() => _moveOverlayItem.Checked = false;
 
     public void SyncOverlayVisibility(bool visible)
     {

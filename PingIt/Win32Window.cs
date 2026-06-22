@@ -14,11 +14,17 @@ internal static class Win32Window
     private const uint SwpNoactivate = 0x0010;
     private const uint SwpShowwindow = 0x0040;
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLong", SetLastError = true)]
+    private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
 
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLong", SetLastError = true)]
+    private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(
@@ -38,11 +44,24 @@ internal static class Win32Window
         if (handle == IntPtr.Zero)
             return;
 
-        var style = GetWindowLong(handle, GwlExstyle);
+        var style = GetWindowLongPtr(handle, GwlExstyle).ToInt64();
         var updated = enabled
             ? style | WsExTransparent
             : style & ~WsExTransparent;
 
-        SetWindowLong(handle, GwlExstyle, updated);
+        SetWindowLongPtr(handle, GwlExstyle, new IntPtr(updated));
+    }
+
+    private static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex) =>
+        IntPtr.Size == 8
+            ? GetWindowLongPtr64(hWnd, nIndex)
+            : new IntPtr(GetWindowLong32(hWnd, nIndex));
+
+    private static void SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr newValue)
+    {
+        if (IntPtr.Size == 8)
+            SetWindowLongPtr64(hWnd, nIndex, newValue);
+        else
+            SetWindowLong32(hWnd, nIndex, newValue.ToInt32());
     }
 }

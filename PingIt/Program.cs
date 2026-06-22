@@ -2,7 +2,7 @@ namespace PingIt;
 
 internal static class Program
 {
-    private const string SingleInstanceMutexName = @"Global\PingIt_SingleInstance";
+    private static readonly string SingleInstanceMutexName = $"Local\\{AppConstants.AppName}_SingleInstance";
 
     [STAThread]
     private static void Main(string[] args)
@@ -24,7 +24,14 @@ internal static class Program
     {
         using var mutex = new Mutex(true, SingleInstanceMutexName, out var isNewInstance);
         if (!isNewInstance)
+        {
+            MessageBox.Show(
+                "PingIt is already running.\n\nCheck the system tray near the clock.",
+                AppConstants.AppName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
             return;
+        }
 
         var launchedAtStartup = args.Any(static a =>
             string.Equals(a, "--startup", StringComparison.OrdinalIgnoreCase));

@@ -13,20 +13,29 @@ internal static class StartupHelper
         return key?.GetValue(ValueName) is string;
     }
 
-    public static void SetEnabled(bool enabled)
+    public static bool SetEnabled(bool enabled)
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
-        if (key is null)
-            return;
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            if (key is null)
+                return false;
 
-        if (enabled)
-        {
-            var exe = Application.ExecutablePath;
-            key.SetValue(ValueName, $"\"{exe}\" --startup");
+            if (enabled)
+            {
+                var exe = Application.ExecutablePath;
+                key.SetValue(ValueName, $"\"{exe}\" --startup");
+            }
+            else
+            {
+                key.DeleteValue(ValueName, throwOnMissingValue: false);
+            }
+
+            return true;
         }
-        else
+        catch
         {
-            key.DeleteValue(ValueName, throwOnMissingValue: false);
+            return false;
         }
     }
 }
